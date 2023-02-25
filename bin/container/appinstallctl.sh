@@ -229,11 +229,42 @@ change_owner(){
 		fi
 }
 
+set_vh_docroot_empty_website(){
+  	if [ "${VHNAME}" != '' ]; then
+  	    VH_ROOT="${DEFAULT_VH_ROOT}/${VHNAME}"
+  	    VH_DOC_ROOT="${DEFAULT_VH_ROOT}/${VHNAME}/html"
+  	elif [ -d ${DEFAULT_VH_ROOT}/${1}/html ]; then
+  	    VH_ROOT="${DEFAULT_VH_ROOT}/${1}"
+          VH_DOC_ROOT="${DEFAULT_VH_ROOT}/${1}/html"
+  	else
+  	    echo "${DEFAULT_VH_ROOT}/${1}/html does not exist, please add domain first! Abort!"
+  		exit 1
+  	fi
+}
+
+install_empty_website(){
+  if [ ! -f ${VH_DOC_ROOT}/index.html ]; then
+      touch ${VH_DOC_ROOT}/index.html
+  fi
+  cat << EOM > ${VH_DOC_ROOT}/index.html
+<!doctype html>
+<html>
+  <head>
+    <title>HelloWorld</title>
+  </head>
+  <body>
+    <p>Hello World</p>
+  </body>
+</html>
+EOM
+}
+
+
 main(){
-	set_vh_docroot ${DOMAIN}
-	get_owner
-	cd ${VH_DOC_ROOT}
 	if [ "${APP_NAME}" = 'wordpress' ] || [ "${APP_NAME}" = 'wp' ]; then
+    set_vh_docroot ${DOMAIN}
+    get_owner
+    cd ${VH_DOC_ROOT}
 		check_sql_native
 		app_wordpress_dl
 		preinstall_wordpress
@@ -243,9 +274,16 @@ main(){
 		set_lscache
 		change_owner
 		exit 0
+	elif [ "${APP_NAME}" = 'empty' ] || [ "${APP_NAME}" = 'mt' ]; then
+    set_vh_docroot_empty_website ${DOMAIN}
+    install_empty_website
+    get_owner
+    cd ${VH_DOC_ROOT}
+    change_owner
+    exit 0
 	else
 		echo "APP: ${APP_NAME} not support, exit!"
-		exit 1	
+		exit 1
 	fi
 }
 
@@ -265,10 +303,10 @@ while [ ! -z "${1}" ]; do
 			;;
 		-vhname | --vhname) shift
 			VHNAME="${1}"
-			;;	       
-		*) 
+			;;
+		*)
 			help_message
-			;;              
+			;;
 	esac
 	shift
 done

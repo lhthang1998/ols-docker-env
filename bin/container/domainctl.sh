@@ -15,10 +15,12 @@ help_message(){
     echo -e "\033[1mOPTIONS\033[0m"
     echow '-A, --add [DOMAIN_NAME]'
     echo "${EPACE}${EPACE}Will add domain to listener and creat a virtual host from template"
+    echow '-S, --sub [DOMAIN_NAME] [SUB_DOMAIN_NAME]'
+    echo "${EPACE}${EPACE}Will add sub domain to a virtual host"
     echow '-D, --del [DOMAIN_NAME]'
     echo "${EPACE}${EPACE}Will delete domain from listener"
     echow '-H, --help'
-    echo "${EPACE}${EPACE}Display help."    
+    echo "${EPACE}${EPACE}Display help."
 }
 
 check_lsv(){
@@ -28,13 +30,13 @@ check_lsv(){
         LSV='lsws'
     else
         echo 'Version not exist, abort!'
-        exit 1     
+        exit 1
     fi
 }
 
 dot_escape(){
     ESCAPE=$(echo ${1} | sed 's/\./\\./g')
-}  
+}
 
 check_duplicate(){
     CK_RESULT=$(grep -E "${1}" ${2})
@@ -84,6 +86,11 @@ add_ols_domain(){
   }/gmi' ${OLS_HTTPD_CONF}
 }
 
+add_sub_domain(){
+    MATCH_LINE=$(grep -E "vhDomain" ${OLS_HTTPD_CONF} | grep ${1})
+    sed -i "s/${MATCH_LINE}/${MATCH_LINE},${2}/g" ${OLS_HTTPD_CONF}
+}
+
 add_domain(){
     check_lsv
     dot_escape ${1}
@@ -95,7 +102,7 @@ add_domain(){
             echo "# It appears the domain already exist! Check the ${LS_HTTPD_CONF} if you believe this is a mistake!"
             exit 1
         fi
-        add_ls_domain 
+        add_ls_domain
     elif [ "${LSV}" = 'openlitespeed' ]; then
         check_duplicate "member.*${DOMAIN}" ${OLS_HTTPD_CONF}
         if [ "${CK_RESULT}" != '' ]; then
@@ -103,7 +110,7 @@ add_domain(){
             exit 1
         fi  
         add_ols_domain      
-    fi   
+    fi
 }
 
 del_ls_domain(){
@@ -116,7 +123,7 @@ del_ls_domain(){
 del_ols_domain(){
     fst_match_line ${1} ${OLS_HTTPD_CONF}
     lst_match_line ${FIRST_LINE_NUM} ${OLS_HTTPD_CONF} '}'
-    sed -i "${FIRST_LINE_NUM},${LAST_LINE_NUM}d" ${OLS_HTTPD_CONF}    
+    sed -i "${FIRST_LINE_NUM},${LAST_LINE_NUM}d" ${OLS_HTTPD_CONF}
 }
 
 del_domain(){
@@ -136,7 +143,7 @@ del_domain(){
             echo "# Domain non-exist! Check the ${OLS_HTTPD_CONF} if you believe this is a mistake!"
             exit 1
         fi
-        del_ols_domain ${1}     
+        del_ols_domain ${1}
     fi
 }
 
@@ -148,6 +155,9 @@ while [ ! -z "${1}" ]; do
             ;;
         -[aA] | -add | --add) shift
             add_domain ${1}
+            ;;
+        -[aS] | -sub | --sub) shift
+            add_sub_domain ${1} ${2}
             ;;
         -[dD] | -del | --del | --delete) shift
             del_domain ${1}

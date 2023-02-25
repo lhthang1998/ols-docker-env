@@ -34,6 +34,12 @@ add_domain(){
     bash bin/webadmin.sh -r
 }
 
+add_sub_domain(){
+    check_input ${1}
+    docker compose exec ${CONT_NAME} su -s /bin/bash lsadm -c "cd /usr/local/lsws/conf && domainctl.sh --sub ${1} ${2}"
+    bash bin/webadmin.sh -r
+}
+
 del_domain(){
     check_input ${1}
     docker compose exec ${CONT_NAME} su -s /bin/bash lsadm -c "cd /usr/local/lsws/conf && domainctl.sh --del ${1}"
@@ -49,13 +55,15 @@ while [ ! -z "${1}" ]; do
         -[aA] | -add | --add) shift
             add_domain ${1}
             ;;
+        -[uS] | -sub | --sub) shift
+            add_sub_domain ${1} ${2}
+            ;;
         -[dD] | -del | --del | --delete) shift
             del_domain ${1}
-            ;;          
-        *) 
+            ;;
+        *)
             help_message
-            ;;              
+            ;;
     esac
     shift
 done
-          
