@@ -15,8 +15,12 @@ help_message(){
     echo -e "\033[1mOPTIONS\033[0m"
     echow '-A, --add [DOMAIN_NAME]'
     echo "${EPACE}${EPACE}Will add domain to listener and creat a virtual host from template"
-    echow '-S, --sub [DOMAIN_NAME] [SUB_DOMAIN_NAME]'
+    echow '-sub , --sub [PRIMARY_DOMAIN] [SUB_DOMAIN_NAME]'
     echo "${EPACE}${EPACE}Will add sub domain to a virtual host"
+    echow '-delsub , --delsub [PRIMARY_DOMAIN] [SUB_DOMAIN_NAME]'
+    echo "${EPACE}${EPACE}Will delete sub domain to a virtual host"
+    echow '-updp , --updp [PRIMARY_DOMAIN] [NEW_PRIMARY_DOMAIN]'
+    echo "${EPACE}${EPACE}Will update primary domain to a virtual host"
     echow '-D, --del [DOMAIN_NAME]'
     echo "${EPACE}${EPACE}Will delete domain from listener"
     echow '-H, --help'
@@ -86,11 +90,6 @@ add_ols_domain(){
   }/gmi' ${OLS_HTTPD_CONF}
 }
 
-add_sub_domain(){
-    MATCH_LINE=$(grep -E "vhDomain" ${OLS_HTTPD_CONF} | grep ${1})
-    sed -i "s/${MATCH_LINE}/${MATCH_LINE},${2}/g" ${OLS_HTTPD_CONF}
-}
-
 add_domain(){
     check_lsv
     dot_escape ${1}
@@ -147,6 +146,42 @@ del_domain(){
     del_ols_domain ${1}
 }
 
+add_alias_domain(){
+    MATCH_LINE=$(awk "/vhDomain.*${1}/,/}/"  ${OLS_HTTPD_CONF})
+    if [[ "${MATCH_LINE}" == *"vhAliases"* ]]; then
+      MATCH_LINE=$(echo "${MATCH_LINE}" | grep -E "vhAliases")
+      sed -i "/^${MATCH_LINE}/s/$/, ${2}/" ${OLS_HTTPD_CONF}
+    else
+      MATCH_LINE=$(grep -E "vhDomain" ${OLS_HTTPD_CONF} | grep ${1})
+      sed -i "/${MATCH_LINE}/a \ \ \ \ vhAliases             ${2}" ${OLS_HTTPD_CONF}
+    fi
+    exit 0
+}
+
+del_alias_domain(){
+    MATCH_LINE=$(awk "/vhDomain.*${1}/,/}/"  ${OLS_HTTPD_CONF})
+    if [[ "${MATCH_LINE}" == *"vhAliases"* ]]; then
+      MATCH_LINE=$(echo "${MATCH_LINE}" | grep -E "vhAliases")
+      count=$(echo $MATCH_LINE | grep -c ,)
+      if [ "${count}" = 0 ]; then
+        echo "Delete last sub domain"
+        echo $MATCH_LINE | sed -i "/${2}/d" ${OLS_HTTPD_CONF}
+      else
+        echo $MATCH_LINE | sed -i s/", ${2}"// ${OLS_HTTPD_CONF}
+      fi
+    else
+      echo 'No sub domain to delete'
+    fi
+    exit 0
+}
+
+update_primary_domain(){
+    MATCH_LINE=$(grep -E "vhDomain" ${OLS_HTTPD_CONF} | grep ${1})
+    sed -i "s/${MATCH_LINE}/    vhDomain              ${2}/g" ${OLS_HTTPD_CONF}
+    add_alias_domain ${2} ${1}
+    exit 0
+}
+
 check_input ${1}
 while [ ! -z "${1}" ]; do
     case ${1} in
@@ -156,12 +191,18 @@ while [ ! -z "${1}" ]; do
         -[aA] | -add | --add) shift
             add_domain ${1}
             ;;
-        -[aS] | -sub | --sub) shift
-            add_sub_domain ${1} ${2}
-            ;;
         -[dD] | -del | --del | --delete) shift
             del_domain ${1}
-            ;;          
+            ;;
+        -[aS] | -sub | --sub) shift
+            add_alias_domain ${1} ${2}
+            ;;
+        -[dS] | -delsub | --delsub) shift
+            del_alias_domain ${1} ${2}
+            ;;
+        -[uD] | -updp | --updp) shift
+            update_primary_domain ${1} ${2}
+            ;;
         *) 
             help_message
             ;;
