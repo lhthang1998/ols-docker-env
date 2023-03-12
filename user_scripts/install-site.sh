@@ -27,8 +27,8 @@ help_message(){
     echow "-U, --username [ADMIN_USERNAME]"
     echow "-P, --password [ADMIN_PASSWORD]"
     echow "-db, --database [DATABASE_NAME]"
-    echow "-bU, --database-username [DATABASE_USER]"
-    echow "-bP, --database-password [DATABASE_PASSWORD]"
+    echow "-bU, --dbuser [DATABASE_USER]"
+    echow "-bP, --dbpassword [DATABASE_PASSWORD]"
     echow '-H, --help'
     echo "${EPACE}${EPACE}Display help and exit."
     exit 0
