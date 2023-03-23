@@ -20,7 +20,7 @@ help_message(){
     echo "${EPACE}${EPACE}Example: domain.sh --sub example.com subdomain.com, will add an alias domain to Listener."
     echow '-delsub, --delsub [primary_domain] [sub_domain]'
     echo "${EPACE}${EPACE}Example: domain.sh --delsub example.com subdomain.com, will remove an alias domain to Listener."
-    echow '-updp, --updp [primary_domain] [new_primary_domain]'
+    echow '-updp, --updp [primary_domain] [new_primary_domain] [array_alias_domain]'
     echo "${EPACE}${EPACE}Example: domain.sh --updp example.com newdomain.com, will update a primary domain to Listener."
     echow '-H, --help'
     echo "${EPACE}${EPACE}Display help and exit."    
@@ -62,7 +62,7 @@ del_alias_domain(){
 
 update_primary_domain(){
     echo "Primary domain: ${1}, new primary domain: ${2}"
-    docker compose exec ${CONT_NAME} su -s /bin/bash lsadm -c "cd /usr/local/lsws/conf && domainctl.sh --updp ${1} ${2}"
+    docker compose exec ${CONT_NAME} su -s /bin/bash lsadm -c "cd /usr/local/lsws/conf && domainctl.sh --updp ${1} ${2} ${3}"
     bash bin/webadmin.sh -r
 }
 
@@ -85,7 +85,7 @@ while [ ! -z "${1}" ]; do
             del_alias_domain ${1} ${2}
             ;;
         -[uD] | -updp | --updp) shift
-            update_primary_domain ${1} ${2}
+            update_primary_domain ${1} ${2} ${3}
             ;;
         *)
             help_message
