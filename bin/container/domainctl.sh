@@ -19,7 +19,7 @@ help_message(){
     echo "${EPACE}${EPACE}Will add sub domain to a virtual host"
     echow '-delsub , --delsub [PRIMARY_DOMAIN] [SUB_DOMAIN_NAME]'
     echo "${EPACE}${EPACE}Will delete sub domain to a virtual host"
-    echow '-updp , --updp [PRIMARY_DOMAIN] [NEW_PRIMARY_DOMAIN]'
+    echow '-updp , --updp [PRIMARY_DOMAIN] [NEW_PRIMARY_DOMAIN] [ARRAY_ALIAS_DOMAIN]'
     echo "${EPACE}${EPACE}Will update primary domain to a virtual host"
     echow '-D, --del [DOMAIN_NAME]'
     echo "${EPACE}${EPACE}Will delete domain from listener"
@@ -178,7 +178,13 @@ del_alias_domain(){
 update_primary_domain(){
     MATCH_LINE=$(grep -E "vhDomain" ${OLS_HTTPD_CONF} | grep ${1})
     sed -i "s/${MATCH_LINE}/    vhDomain              ${2}/g" ${OLS_HTTPD_CONF}
-    add_alias_domain ${2} ${1}
+    if grep -A 1 "vhDomain.*${1}" ${OLS_HTTPD_CONF} | tail -n 1 | grep -q "vhAliases";
+    then
+        add_alias_domain ${2} ${3}
+    else
+        MATCH_LINE=$(grep -E "vhAliases" ${OLS_HTTPD_CONF} | grep ${2})
+        sed -i "s/${MATCH_LINE}/    vhAliases              ${3}/g" ${OLS_HTTPD_CONF}
+    fi
     exit 0
 }
 
@@ -201,7 +207,7 @@ while [ ! -z "${1}" ]; do
             del_alias_domain ${1} ${2}
             ;;
         -[uD] | -updp | --updp) shift
-            update_primary_domain ${1} ${2}
+            update_primary_domain ${1} ${2} ${3}
             ;;
         *) 
             help_message
