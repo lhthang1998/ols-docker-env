@@ -63,14 +63,14 @@ main(){
 
   if [ "${APP_NAME}" = "empty" ]; then
     echo 'Installing empty site...'
-    ./bin/appinstall.sh --app empty --domain ${DOMAIN} --title ${TITLE}
+    ./bin/appinstall.sh --app empty --domain ${DOMAIN} --title "${TITLE}"
   fi
   #
   if [ "${APP_NAME}" = "wordpress" ]; then
     echo 'Installing Wordpress site...'
     ./bin/database.sh --domain ${DOMAIN} --user ${DATABASE_USER} --password ${DATABASE_PASSWORD} --database ${DATABASE_NAME}
 
-    ./bin/appinstall.sh --app wordpress --domain ${DOMAIN} --title ${TITLE} --username ${ADMIN_USERNAME} --password ${ADMIN_PASSWORD} --email ${EMAIL}
+    ./bin/appinstall.sh --app wordpress --domain ${DOMAIN} --title "${TITLE}" --username ${ADMIN_USERNAME} --password ${ADMIN_PASSWORD} --email ${EMAIL}
 
   fi
 
