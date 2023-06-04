@@ -2,25 +2,22 @@
 dir_name="$1"
 username="$2"
 passwd="$3"
-
+group="$4"
 parentdir="$(dirname "$dir_name")"
+basedir="$(basename "$dir_name")"
 
-if [[ ! -z $(grep "Match User $username" "/etc/ssh/sshd_config") ]];
-then
+if id "$username" &>/dev/null; then
 echo "Already set up"
 else
-echo "Add new group: sftp_user"
-sudo groupadd sftp_user
 echo "Add user to sftp server"
-echo -e "\n\n\n\n\n\y\n" |  sudo adduser --home $dir_name $username
-echo -e "$passwd\n$passwd\n" | sudo passwd $username
-#sudo chmod 755 $dir_name
-sudo chgrp -R sftp_user $dir_name
-sudo chmod -R 770 $dir_name
-#cat << EOF >> /etc/ssh/sshd_config
-#Match User $username
-#  ChrootDirectory $dir_name
-#EOF
+sudo groupadd $group
+echo -e "$passwd\n$passwd\n\n\n\n\n\n\Y\n" |  sudo adduser --home $dir_name $username --ingroup $group
+sudo setfacl -R -m u:$username:--- /var/tabb
+sudo setfacl -R -m u:$username:--- /usr/local/tabb
+for d in "$parentdir"/*/; do
+    sudo setfacl -R -m u:$username:--- $d
+done
+sudo setfacl -R -m u:$username:rwx $dir_name
 fi
 sudo systemctl restart ssh
 echo "Done"
